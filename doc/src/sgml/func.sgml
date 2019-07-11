@@ -2497,18 +2497,6 @@
 
      <tbody>
       <row>
-       <entry><literal>ascii_to_mic</literal></entry>
-       <entry><literal>SQL_ASCII</literal></entry>
-       <entry><literal>MULE_INTERNAL</literal></entry>
-      </row>
-
-      <row>
-       <entry><literal>ascii_to_utf8</literal></entry>
-       <entry><literal>SQL_ASCII</literal></entry>
-       <entry><literal>UTF8</literal></entry>
-      </row>
-
-      <row>
        <entry><literal>big5_to_euc_tw</literal></entry>
        <entry><literal>BIG5</literal></entry>
        <entry><literal>EUC_TW</literal></entry>
@@ -2779,12 +2767,6 @@
       </row>
 
       <row>
-       <entry><literal>mic_to_ascii</literal></entry>
-       <entry><literal>MULE_INTERNAL</literal></entry>
-       <entry><literal>SQL_ASCII</literal></entry>
-      </row>
-
-      <row>
        <entry><literal>mic_to_big5</literal></entry>
        <entry><literal>MULE_INTERNAL</literal></entry>
        <entry><literal>BIG5</literal></entry>
@@ -2902,12 +2884,6 @@
        <entry><literal>uhc_to_utf8</literal></entry>
        <entry><literal>UHC</literal></entry>
        <entry><literal>UTF8</literal></entry>
-      </row>
-
-      <row>
-       <entry><literal>utf8_to_ascii</literal></entry>
-       <entry><literal>UTF8</literal></entry>
-       <entry><literal>SQL_ASCII</literal></entry>
       </row>
 
       <row>
@@ -6444,20 +6420,20 @@ SELECT regexp_match('abc01234xyz', '(?:(.*?)(\d+)(.*)){1,1}');
       </para>
       <para>
        If <literal>FX</literal> is specified, a separator in the template string
-       matches exactly one character in input string.  Notice we don't insist the
-       input string character be the same as the template string separator.
+       matches exactly one character in the input string.  But note that the
+       input string character is not required to be the same as the separator from the template string.
        For example, <literal>to_timestamp('2000/JUN', 'FXYYYY MON')</literal>
        works, but <literal>to_timestamp('2000/JUN', 'FXYYYY&nbsp;&nbsp;MON')</literal>
-       returns an error because the second template string space is consumed
-       by the letter <literal>J</literal> in the input string.
+       returns an error because the second space in the template string consumes
+       the letter <literal>J</literal> from the input string.
       </para>
      </listitem>
 
      <listitem>
       <para>
        A <literal>TZH</literal> template pattern can match a signed number.
-       Without the <literal>FX</literal> option, it can lead to ambiguity in
-       interpretation of the minus sign, which can also be interpreted as a separator.
+       Without the <literal>FX</literal> option, minus signs may be ambiguous,
+       and could be interpreted as a separator.
        This ambiguity is resolved as follows:  If the number of separators before
        <literal>TZH</literal> in the template string is less than the number of
        separators before the minus sign in the input string, the minus sign
@@ -11538,7 +11514,8 @@ table2-mapping
    from the JSON data, similar to XPath expressions used
    for SQL access to XML. In <productname>PostgreSQL</productname>,
    path expressions are implemented as the <type>jsonpath</type>
-   data type, described in <xref linkend="datatype-jsonpath"/>.
+   data type and can use any elements described in
+   <xref linkend="datatype-jsonpath"/>.
   </para>
 
   <para>JSON query functions and operators
@@ -11585,7 +11562,7 @@ table2-mapping
       },
       { "location":   [ 47.706, 13.2635 ],
         "start time": "2018-10-14 10:39:21",
-        "HR": 130
+        "HR": 135
       } ]
   }
 }
@@ -11624,7 +11601,7 @@ table2-mapping
    The result of each path evaluation step can be processed
    by one or more <type>jsonpath</type> operators and methods
    listed in <xref linkend="functions-sqljson-path-operators"/>.
-   Each method must be preceded by a dot, while arithmetic and boolean
+   Each method must be preceded by a dot, while arithmetic and Boolean
    operators are separated from the operands by spaces. For example,
    you can get an array size:
 <programlisting>
@@ -11637,23 +11614,33 @@ table2-mapping
 
   <para>
    When defining the path, you can also use one or more
-   <firstterm>filter expressions</firstterm>, which work similar to
-   the <literal>WHERE</literal> clause in SQL. Each filter expression
-   can provide one or more filtering conditions that are applied
-   to the result of the path evaluation. Each filter expression must
-   be enclosed in parentheses and preceded by a question mark.
-   Filter expressions are evaluated from left to right and can be nested.
-   The <literal>@</literal> variable denotes the current path evaluation
-   result to be filtered, and can be followed by one or more accessor
-   operators to define the JSON element by which to filter the result.
-   Functions and operators that can be used in the filtering condition
-   are listed in <xref linkend="functions-sqljson-filter-ex-table"/>.
-   SQL/JSON defines three-valued logic, so the result of the filter
-   expression may be <literal>true</literal>, <literal>false</literal>,
+   <firstterm>filter expressions</firstterm> that work similar to the
+   <literal>WHERE</literal> clause in SQL. A filter expression begins with
+   a question mark and provides a condition in parentheses:
+
+    <programlisting>
+? (<replaceable>condition</replaceable>)
+    </programlisting>
+  </para>
+
+  <para>
+   Filter expressions must be specified right after the path evaluation step
+   to which they are applied. The result of this step is filtered to include
+   only those items that satisfy the provided condition. SQL/JSON defines
+   three-valued logic, so the condition can be <literal>true</literal>, <literal>false</literal>,
    or <literal>unknown</literal>. The <literal>unknown</literal> value
-   plays the same role as SQL <literal>NULL</literal>. Further path
+   plays the same role as SQL <literal>NULL</literal> and can be tested
+   for with the <literal>is unknown</literal> predicate. Further path
    evaluation steps use only those items for which filter expressions
-   return true.
+   return <literal>true</literal>.
+  </para>
+
+  <para>
+   Functions and operators that can be used in filter expressions are listed
+   in <xref linkend="functions-sqljson-filter-ex-table"/>. The path
+   evaluation result to be filtered is denoted by the <literal>@</literal>
+   variable. To refer to a JSON element stored at a lower nesting level,
+   add one or more accessor operators after <literal>@</literal>.
   </para>
 
   <para>
@@ -11667,8 +11654,8 @@ table2-mapping
   <para>
    To get the start time of segments with such values instead, you have to
    filter out irrelevant segments before returning the start time, so the
-   filter is applied to the previous step and the path in the filtering
-   condition is different:
+   filter expression is applied to the previous step, and the path used
+   in the condition is different:
 <programlisting>
 '$.track.segments[*] ? (@.HR &gt; 130)."start time"'
 </programlisting>
@@ -11693,9 +11680,9 @@ table2-mapping
   </para>
 
   <para>
-   You can also nest filters within each other:
+   You can also nest filter expressions within each other:
 <programlisting>
-'$.track ? (@.segments[*] ? (@.HR &gt; 130)).segments.size()'
+'$.track ? (exists(@.segments[*] ? (@.HR &gt; 130))).segments.size()'
 </programlisting>
    This expression returns the size of the track if it contains any
    segments with high heart rate values, or an empty sequence otherwise.
@@ -11719,7 +11706,7 @@ table2-mapping
 
    <listitem>
     <para>
-     A path expression can be a boolean predicate, although the SQL/JSON
+     A path expression can be a Boolean predicate, although the SQL/JSON
      standard allows predicates only in filters.  This is necessary for
      implementation of the <literal>@@</literal> operator. For example,
      the following<type>jsonpath</type> expression is valid in
@@ -11810,6 +11797,13 @@ table2-mapping
 
    <sect3 id="functions-sqljson-path-operators">
    <title>SQL/JSON Path Operators and Methods</title>
+
+   <para>
+    <xref linkend="functions-sqljson-op-table"/> shows the operators and
+    methods available in <type>jsonpath</type>.  <xref
+    linkend="functions-sqljson-filter-ex-table"/> shows the available filter
+    expression elements.
+   </para>
 
    <table id="functions-sqljson-op-table">
     <title><type>jsonpath</type> Operators and Methods</title>
@@ -11971,14 +11965,14 @@ table2-mapping
         <entry>Less-than operator</entry>
         <entry><literal>[1, 2, 3]</literal></entry>
         <entry><literal>$[*] ? (@ &lt; 2)</literal></entry>
-        <entry><literal>1, 2</literal></entry>
+        <entry><literal>1</literal></entry>
        </row>
        <row>
         <entry><literal>&lt;=</literal></entry>
         <entry>Less-than-or-equal-to operator</entry>
         <entry><literal>[1, 2, 3]</literal></entry>
-        <entry><literal>$[*] ? (@ &lt; 2)</literal></entry>
-        <entry><literal>1</literal></entry>
+        <entry><literal>$[*] ? (@ &lt;= 2)</literal></entry>
+        <entry><literal>1, 2</literal></entry>
        </row>
        <row>
         <entry><literal>&gt;</literal></entry>
@@ -11988,7 +11982,7 @@ table2-mapping
         <entry><literal>3</literal></entry>
        </row>
        <row>
-        <entry><literal>&gt;</literal></entry>
+        <entry><literal>&gt;=</literal></entry>
         <entry>Greater-than-or-equal-to operator</entry>
         <entry><literal>[1, 2, 3]</literal></entry>
         <entry><literal>$[*] ? (@ &gt;= 2)</literal></entry>
@@ -12041,7 +12035,11 @@ table2-mapping
        </row>
        <row>
         <entry><literal>like_regex</literal></entry>
-        <entry>Tests pattern matching with POSIX regular expressions</entry>
+        <entry>
+          Tests pattern matching with POSIX regular expressions
+          (<xref linkend="functions-posix-regexp"/>).  Supported flags
+          are <literal>i</literal>, <literal>s</literal>, <literal>m</literal>,
+          <literal>x</literal> and <literal>q</literal>.</entry>
         <entry><literal>["abc", "abd", "aBdC", "abdacb", "babc"]</literal></entry>
         <entry><literal>$[*] ? (@ like_regex "^ab.*c" flag "i")</literal></entry>
         <entry><literal>"abc", "aBdC", "abdacb"</literal></entry>
@@ -12062,7 +12060,7 @@ table2-mapping
        </row>
        <row>
         <entry><literal>is unknown</literal></entry>
-        <entry>Tests whether a boolean condition is <literal>unknown</literal></entry>
+        <entry>Tests whether a Boolean condition is <literal>unknown</literal></entry>
         <entry><literal>[-1, 2, 7, "infinity"]</literal></entry>
         <entry><literal>$[*] ? ((@ > 0) is unknown)</literal></entry>
         <entry><literal>"infinity"</literal></entry>
@@ -12274,15 +12272,15 @@ table2-mapping
        <row>
         <entry><literal>@?</literal></entry>
         <entry><type>jsonpath</type></entry>
-        <entry>Does JSON path returns any item for the specified JSON value?</entry>
+        <entry>Does JSON path return any item for the specified JSON value?</entry>
         <entry><literal>'{"a":[1,2,3,4,5]}'::jsonb @? '$.a[*] ? (@ > 2)'</literal></entry>
        </row>
        <row>
         <entry><literal>@@</literal></entry>
         <entry><type>jsonpath</type></entry>
         <entry>JSON path predicate check result for the specified JSON value.
-        Only first result item is taken into account.  If there is no results
-        or first result item is not bool, then <literal>NULL</literal>
+        Only first result item is taken into account.  If there are no results
+        or the first result item is not Boolean, then null
         is returned.</entry>
         <entry><literal>'{"a":[1,2,3,4,5]}'::jsonb @@ '$.a[*] > 2'</literal></entry>
        </row>
@@ -12302,8 +12300,8 @@ table2-mapping
   <note>
    <para>
     The <literal>@?</literal> and <literal>@@</literal> operators suppress
-    errors including: lacking object field or array element, unexpected JSON
-    item type and numeric errors.
+    the following errors: lacking object field or array element, unexpected
+    JSON item type, and numeric errors.
     This behavior might be helpful while searching over JSON document
     collections of varying structure.
    </para>
@@ -12947,8 +12945,8 @@ table2-mapping
         <entry><type>boolean</type></entry>
         <entry>
           Returns JSON path predicate result for the specified JSON value.
-          Only first result item is taken into account.  If there is no results
-          or first result item is not bool, then <literal>NULL</literal>
+          Only first result item is taken into account.  If there are no results
+          or the first result item is not Boolean, then null
           is returned.
         </entry>
         <entry>
@@ -12978,13 +12976,13 @@ table2-mapping
         </entry>
         <entry>
          <para>
-           <programlisting>
+<programlisting>
  jsonb_path_query
 ------------------
  2
  3
  4
-           </programlisting>
+</programlisting>
          </para>
         </entry>
        </row>
@@ -13043,30 +13041,72 @@ table2-mapping
   </note>
 
   <note>
-    <para>
-      While the examples for the functions
-      <function>json_populate_record</function>,
-      <function>json_populate_recordset</function>,
-      <function>json_to_record</function> and
-      <function>json_to_recordset</function> use constants, the typical use
-      would be to reference a table in the <literal>FROM</literal> clause
-      and use one of its <type>json</type> or <type>jsonb</type> columns
-      as an argument to the function.  Extracted key values can then be
-      referenced in other parts of the query, like <literal>WHERE</literal>
-      clauses and target lists.  Extracting multiple values in this
-      way can improve performance over extracting them separately with
-      per-key operators.
-    </para>
+   <para>
+    The functions
+    <function>json[b]_populate_record</function>,
+    <function>json[b]_populate_recordset</function>,
+    <function>json[b]_to_record</function> and
+    <function>json[b]_to_recordset</function>
+    operate on a JSON object, or array of objects, and extract the values
+    associated with keys whose names match column names of the output row
+    type.
+    Object fields that do not correspond to any output column name are
+    ignored, and output columns that do not match any object field will be
+    filled with nulls.
+    To convert a JSON value to the SQL type of an output column, the
+    following rules are applied in sequence:
+    <itemizedlist spacing="compact">
+     <listitem>
+      <para>
+       A JSON null value is converted to a SQL null in all cases.
+      </para>
+     </listitem>
+     <listitem>
+      <para>
+       If the output column is of type <type>json</type>
+       or <type>jsonb</type>, the JSON value is just reproduced exactly.
+      </para>
+     </listitem>
+     <listitem>
+      <para>
+       If the output column is a composite (row) type, and the JSON value is
+       a JSON object, the fields of the object are converted to columns of
+       the output row type by recursive application of these rules.
+      </para>
+     </listitem>
+     <listitem>
+      <para>
+       Likewise, if the output column is an array type and the JSON value is
+       a JSON array, the elements of the JSON array are converted to elements
+       of the output array by recursive application of these rules.
+      </para>
+     </listitem>
+     <listitem>
+      <para>
+       Otherwise, if the JSON value is a string literal, the contents of the
+       string are fed to the input conversion function for the column's data
+       type.
+      </para>
+     </listitem>
+     <listitem>
+      <para>
+       Otherwise, the ordinary text representation of the JSON value is fed
+       to the input conversion function for the column's data type.
+      </para>
+     </listitem>
+    </itemizedlist>
+   </para>
 
-    <para>
-      JSON keys are matched to identical column names in the target
-      row type.  JSON type coercion for these functions is <quote>best
-      effort</quote> and may not result in desired values for some types.
-      JSON fields that do not appear in the target row type will be
-      omitted from the output, and target columns that do not match any
-      JSON field will simply be NULL.
-
-    </para>
+   <para>
+    While the examples for these functions use constants, the typical use
+    would be to reference a table in the <literal>FROM</literal> clause
+    and use one of its <type>json</type> or <type>jsonb</type> columns
+    as an argument to the function.  Extracted key values can then be
+    referenced in other parts of the query, like <literal>WHERE</literal>
+    clauses and target lists.  Extracting multiple values in this
+    way can improve performance over extracting them separately with
+    per-key operators.
+   </para>
   </note>
 
   <note>
@@ -13117,17 +13157,17 @@ table2-mapping
     <literal>jsonb_path_query</literal>, <literal>jsonb_path_query_array</literal> and
     <literal>jsonb_path_query_first</literal>
     functions have optional <literal>vars</literal> and <literal>silent</literal>
-    argument.
+    arguments.
    </para>
    <para>
-    When <literal>vars</literal> argument is specified, it constitutes an object
-    contained variables to be substituted into <literal>jsonpath</literal>
-    expression.
+    If the <literal>vars</literal> argument is specified, it provides an
+    object containing named variables to be substituted into a
+    <literal>jsonpath</literal> expression.
    </para>
    <para>
-    When <literal>silent</literal> argument is specified and has
-    <literal>true</literal> value, the same errors are suppressed as it is in
-    the <literal>@?</literal> and <literal>@@</literal> operators.
+    If the <literal>silent</literal> argument is specified and has the
+    <literal>true</literal> value, these functions suppress the same errors
+    as the <literal>@?</literal> and <literal>@@</literal> operators.
    </para>
   </note>
 
@@ -14751,7 +14791,7 @@ NULL baz</literallayout>(3 rows)</entry>
        </indexterm>
        <function>max(<replaceable class="parameter">expression</replaceable>)</function>
       </entry>
-      <entry>any numeric, string, date/time, network, or enum type,
+      <entry>any numeric, string, date/time, network, pg_lsn, or enum type,
              or arrays of these types</entry>
       <entry>same as argument type</entry>
       <entry>Yes</entry>
@@ -14769,7 +14809,7 @@ NULL baz</literallayout>(3 rows)</entry>
        </indexterm>
        <function>min(<replaceable class="parameter">expression</replaceable>)</function>
       </entry>
-      <entry>any numeric, string, date/time, network, or enum type,
+      <entry>any numeric, string, date/time, network, pg_lsn, or enum type,
              or arrays of these types</entry>
       <entry>same as argument type</entry>
       <entry>Yes</entry>
@@ -22378,12 +22418,12 @@ CREATE EVENT TRIGGER test_table_rewrite_oid
     The <function>pg_mcv_list_items</function> function can be used like this:
 
 <programlisting>
-SELECT m.* FROM pg_statistic_ext,
-                pg_mcv_list_items(stxmcv) m WHERE stxname = 'stts';
+SELECT m.* FROM pg_statistic_ext join pg_statistic_ext_data on (oid = stxoid),
+                pg_mcv_list_items(stxdmcv) m WHERE stxname = 'stts';
 </programlisting>
 
      Values of the <type>pg_mcv_list</type> can be obtained only from the
-     <literal>pg_statistic_ext.stxmcv</literal> column.
+     <literal>pg_statistic_ext_data.stxdmcv</literal> column.
    </para>
   </sect2>
 

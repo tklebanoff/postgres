@@ -19,7 +19,7 @@
  *		as this notice is not removed.
  *
  *	The author is not responsible for loss or damages that may
- *	result from it's use.
+ *	result from its use.
  *
  *
  * IDENTIFICATION
@@ -568,7 +568,7 @@ _tarReadRaw(ArchiveHandle *AH, void *buf, size_t len, TAR_MEMBER *th, FILE *fh)
 			}
 		}
 		else
-			fatal("internal error -- neither th nor fh specified in tarReadRaw()\n");
+			fatal("internal error -- neither th nor fh specified in tarReadRaw()");
 	}
 
 	ctx->tarFHpos += res + used;

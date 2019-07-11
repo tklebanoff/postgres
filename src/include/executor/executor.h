@@ -314,7 +314,7 @@ ExecEvalExprSwitchContext(ExprState *state,
  * ExecProject
  *
  * Projects a tuple based on projection info and stores it in the slot passed
- * to ExecBuildProjectInfo().
+ * to ExecBuildProjectionInfo().
  *
  * Note: the result is always a virtual tuple; therefore it may reference
  * the contents of the exprContext's scan tuples and/or temporary results
@@ -514,7 +514,6 @@ extern ExprContext *MakePerTupleExprContext(EState *estate);
 
 extern void ExecAssignExprContext(EState *estate, PlanState *planstate);
 extern TupleDesc ExecGetResultType(PlanState *planstate);
-extern TupleTableSlot ExecGetResultSlot(PlanState *planstate);
 extern const TupleTableSlotOps *ExecGetResultSlotOps(PlanState *planstate,
 													 bool *isfixed);
 extern void ExecAssignProjectionInfo(PlanState *planstate,

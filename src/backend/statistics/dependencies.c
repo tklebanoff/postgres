@@ -17,6 +17,7 @@
 #include "access/sysattr.h"
 #include "catalog/pg_operator.h"
 #include "catalog/pg_statistic_ext.h"
+#include "catalog/pg_statistic_ext_data.h"
 #include "lib/stringinfo.h"
 #include "nodes/nodeFuncs.h"
 #include "optimizer/clauses.h"
@@ -534,9 +535,7 @@ statext_dependencies_deserialize(bytea *data)
 			 dependencies->type, STATS_DEPS_TYPE_BASIC);
 
 	if (dependencies->ndeps == 0)
-		ereport(ERROR,
-				(errcode(ERRCODE_DATA_CORRUPTED),
-				 errmsg("invalid zero-length item array in MVDependencies")));
+		elog(ERROR, "invalid zero-length item array in MVDependencies");
 
 	/* what minimum bytea size do we expect for those parameters */
 	min_expected_size = SizeOfItem(dependencies->ndeps);
@@ -639,12 +638,12 @@ statext_dependencies_load(Oid mvoid)
 	Datum		deps;
 	HeapTuple	htup;
 
-	htup = SearchSysCache1(STATEXTOID, ObjectIdGetDatum(mvoid));
+	htup = SearchSysCache1(STATEXTDATASTXOID, ObjectIdGetDatum(mvoid));
 	if (!HeapTupleIsValid(htup))
 		elog(ERROR, "cache lookup failed for statistics object %u", mvoid);
 
-	deps = SysCacheGetAttr(STATEXTOID, htup,
-						   Anum_pg_statistic_ext_stxdependencies, &isnull);
+	deps = SysCacheGetAttr(STATEXTDATASTXOID, htup,
+						   Anum_pg_statistic_ext_data_stxddependencies, &isnull);
 	if (isnull)
 		elog(ERROR,
 			 "requested statistic kind \"%c\" is not yet built for statistics object %u",

@@ -99,13 +99,13 @@ add_preprocessor_define(char *define)
 		/* symbol has a value */
 		for (tmp = ptr - 1; *tmp == ' '; tmp--);
 		tmp[1] = '\0';
-		defines->old = define_copy;
-		defines->new = ptr + 1;
+		defines->olddef = define_copy;
+		defines->newdef = ptr + 1;
 	}
 	else
 	{
-		defines->old = define_copy;
-		defines->new = mm_strdup("1");
+		defines->olddef = define_copy;
+		defines->newdef = mm_strdup("1");
 	}
 	defines->pertinent = true;
 	defines->used = NULL;
@@ -251,7 +251,7 @@ main(int argc, char *const argv[])
 					snprintf(informix_path, MAXPGPATH, "%s/informix/esql", pkginclude_path);
 					add_include_path(informix_path);
 				}
-				else if (strncmp(optarg, "ORACLE", strlen("ORACLE")) == 0)
+				else if (pg_strcasecmp(optarg, "ORACLE") == 0)
 				{
 					compat = ECPG_COMPAT_ORACLE;
 				}
@@ -262,11 +262,11 @@ main(int argc, char *const argv[])
 				}
 				break;
 			case 'r':
-				if (strcmp(optarg, "no_indicator") == 0)
+				if (pg_strcasecmp(optarg, "no_indicator") == 0)
 					force_indicator = false;
-				else if (strcmp(optarg, "prepare") == 0)
+				else if (pg_strcasecmp(optarg, "prepare") == 0)
 					auto_prepare = true;
-				else if (strcmp(optarg, "questionmarks") == 0)
+				else if (pg_strcasecmp(optarg, "questionmarks") == 0)
 					questionmarks = true;
 				else
 				{
@@ -410,8 +410,8 @@ main(int argc, char *const argv[])
 					defptr = defines;
 					defines = defines->next;
 
-					free(defptr->new);
-					free(defptr->old);
+					free(defptr->newdef);
+					free(defptr->olddef);
 					free(defptr);
 				}
 
@@ -423,8 +423,8 @@ main(int argc, char *const argv[])
 					{
 						defptr->next = this->next;
 
-						free(this->new);
-						free(this->old);
+						free(this->newdef);
+						free(this->olddef);
 						free(this);
 					}
 				}

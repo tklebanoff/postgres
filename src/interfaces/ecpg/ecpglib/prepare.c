@@ -85,7 +85,7 @@ ecpg_register_prepared_stmt(struct statement *stmt)
 		return false;
 
 	prep_stmt = (struct statement *) ecpg_alloc(sizeof(struct statement), lineno);
-	if (!stmt)
+	if (!prep_stmt)
 	{
 		ecpg_free(this);
 		return false;
@@ -754,7 +754,11 @@ ecpg_update_declare_statement(const char *declared_name, const char *cursor_name
 	/* Find the declared node by declared name */
 	p = ecpg_find_declared_statement(declared_name);
 	if (p)
+	{
+		if (p->cursor_name)
+			ecpg_free(p->cursor_name);
 		p->cursor_name = ecpg_strdup(cursor_name, lineno);
+	}
 }
 
 /*

@@ -231,7 +231,7 @@ parse_subscription_options(List *options, bool *connect, bool *enabled_given,
 					(errcode(ERRCODE_SYNTAX_ERROR),
 			/*- translator: both %s are strings of the form "option = value" */
 					 errmsg("%s and %s are mutually exclusive options",
-							"slot_name = NONE", "enable = true")));
+							"slot_name = NONE", "enabled = true")));
 
 		if (create_slot && create_slot_given && *create_slot)
 			ereport(ERROR,
@@ -356,6 +356,15 @@ CreateSubscription(CreateSubscriptionStmt *stmt, bool isTopLevel)
 		ereport(ERROR,
 				(errcode(ERRCODE_INSUFFICIENT_PRIVILEGE),
 				 (errmsg("must be superuser to create subscriptions"))));
+
+	/*
+	 * If built with appropriate switch, whine when regression-testing
+	 * conventions for subscription names are violated.
+	 */
+#ifdef ENFORCE_REGRESSION_TEST_NAME_RESTRICTIONS
+	if (strncmp(stmt->subname, "regress_", 8) != 0)
+		elog(WARNING, "subscriptions created by regression test cases should have names starting with \"regress_\"");
+#endif
 
 	rel = table_open(SubscriptionRelationId, RowExclusiveLock);
 

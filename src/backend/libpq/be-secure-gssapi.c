@@ -3,7 +3,7 @@
  * be-secure-gssapi.c
  *  GSSAPI encryption support
  *
- * Portions Copyright (c) 2018-2018, PostgreSQL Global Development Group
+ * Portions Copyright (c) 2018-2019, PostgreSQL Global Development Group
  *
  *
  * IDENTIFICATION
@@ -16,10 +16,9 @@
 
 #include <unistd.h>
 
-#include "be-gssapi-common.h"
 #include "libpq/auth.h"
+#include "libpq/be-gssapi-common.h"
 #include "libpq/libpq.h"
-#include "libpq/libpq-be.h"
 #include "libpq/pqformat.h"
 #include "miscadmin.h"
 #include "pgstat.h"
@@ -400,7 +399,7 @@ read_or_wait(Port *port, ssize_t len)
 		{
 			/*
 			 * If we got back less than zero, indicating an error, and that
-			 * wasn't just a EWOULDBOCK/EAGAIN, then give up.
+			 * wasn't just a EWOULDBLOCK/EAGAIN, then give up.
 			 */
 			if (ret < 0 && !(errno == EWOULDBLOCK || errno == EAGAIN))
 				return -1;

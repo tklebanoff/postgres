@@ -13,7 +13,7 @@
  *		as this notice is not removed.
  *
  *	The author is not responsible for loss or damages that may
- *	result from it's use.
+ *	result from its use.
  *
  *
  * IDENTIFICATION
@@ -426,8 +426,6 @@ typedef struct _archiveOpts
 extern TocEntry *ArchiveEntry(Archive *AHX, CatalogId catalogId,
 							  DumpId dumpId, ArchiveOpts *opts);
 
-extern void WriteTOC(ArchiveHandle *AH);
-extern void ReadTOC(ArchiveHandle *AH);
 extern void WriteHead(ArchiveHandle *AH);
 extern void ReadHead(ArchiveHandle *AH);
 extern void WriteToc(ArchiveHandle *AH);

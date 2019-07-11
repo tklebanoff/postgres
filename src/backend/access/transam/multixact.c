@@ -367,8 +367,10 @@ static bool SetOffsetVacuumLimit(bool is_startup);
 static bool find_multixact_start(MultiXactId multi, MultiXactOffset *result);
 static void WriteMZeroPageXlogRec(int pageno, uint8 info);
 static void WriteMTruncateXlogRec(Oid oldestMultiDB,
-								  MultiXactId startOff, MultiXactId endOff,
-								  MultiXactOffset startMemb, MultiXactOffset endMemb);
+								  MultiXactId startTruncOff,
+								  MultiXactId endTruncOff,
+								  MultiXactOffset startTruncMemb,
+								  MultiXactOffset endTruncMemb);
 
 
 /*
@@ -2208,7 +2210,7 @@ SetMultiXactIdLimit(MultiXactId oldest_datminmxid, Oid oldest_datoid,
 	 * space, but that's not really true, because multixacts wrap differently
 	 * from transaction IDs.  Note that, separately from any concern about
 	 * multixact IDs wrapping, we must ensure that multixact members do not
-	 * wrap.  Limits for that are set in DetermineSafeOldestOffset, not here.
+	 * wrap.  Limits for that are set in SetOffsetVacuumLimit, not here.
 	 */
 	multiWrapLimit = oldest_datminmxid + (MaxMultiXactId >> 1);
 	if (multiWrapLimit < FirstMultiXactId)
@@ -2784,7 +2786,7 @@ ReadMultiXactCounts(uint32 *multixacts, MultiXactOffset *members)
 
 /*
  * Multixact members can be removed once the multixacts that refer to them
- * are older than every datminxmid.  autovacuum_multixact_freeze_max_age and
+ * are older than every datminmxid.  autovacuum_multixact_freeze_max_age and
  * vacuum_multixact_freeze_table_age work together to make sure we never have
  * too many multixacts; we hope that, at least under normal circumstances,
  * this will also be sufficient to keep us from using too many offsets.
